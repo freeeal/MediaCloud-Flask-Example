@@ -7,15 +7,95 @@
 <div class="row">
 
   <div class="col-md-12">
-  
+
     <h3>Search Results</h3>
 
-    <p>You searched for "{{keywords}}"</p>
+    <p>You searched for "{{ keywords }}"</p>
 
     <p>In the US Mainstream Media online there have {{ sentenceCount }} sentences matching your search so far this year.</p>
 
+    <h3>Weekly Results</h3>
+
+    <div id="container" style="min-width: 310px; height: 400px; margin: 0 auto"></div>
+
   </div>
 
-</div>    
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+
+<script>
+  var unsortedWeeklyResults = JSON.parse({{ weeklyResults|tojson|safe}});
+  console.log(unsortedWeeklyResults);
+  console.log(typeof unsortedWeeklyResults)
+
+  sortedWeeklyResults = {}
+  Object.keys(unsortedWeeklyResults).sort().forEach(function(key) {
+    sortedWeeklyResults[key] = unsortedWeeklyResults[key];
+  });
+  console.log(sortedWeeklyResults);
+
+  weeklyData = []
+  for (var key in sortedWeeklyResults) {
+    weeklyData.push([Date.parse(key), sortedWeeklyResults[key]])
+  }
+  console.log(weeklyData)
+
+  Highcharts.chart('container', {
+      chart: {
+          type: 'spline',
+        },
+      title: {
+          text: 'Weekly Sentence Count of {{ keywords }}',
+        },
+      subtitle: {
+          text: 'Data sourced from Media Cloud API',
+        },
+      xAxis: {
+          type: 'datetime',
+          dateTimeLabelFormats: { // don't display the dummy year
+              month: '%e. %b',
+              year: '%b',
+            },
+          title: {
+              text: 'Date',
+            },
+        },
+      yAxis: {
+          title: {
+              text: 'Sentence Count',
+            },
+          min: 0,
+        },
+      tooltip: {
+          pointFormat: '{point.x:%e. %b}: {point.y:.f} words',
+        },
+
+      plotOptions: {
+          spline: {
+              marker: {
+                  enabled: true,
+                },
+            },
+        },
+
+      legend: {
+          enabled: false
+        },
+
+      series: [{
+          name: 'Weekly Sentence Count',
+
+          // Define the data points. All series have a dummy year
+          // of 1970/71 in order to be compared on the same x axis. Note
+          // that in JavaScript, months start at 0 for January, 1 for February etc.
+          data: weeklyData,
+        },
+    ],
+    }
+  );
+</script>
 
 {% endblock %}
